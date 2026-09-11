@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { Globe } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,11 +22,10 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
 
-      const { data, error: signInError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
       if (signInError) {
         throw signInError;
@@ -63,12 +63,32 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <GlassCard className="w-full max-w-md space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Sign in</h1>
+      <GlassCard className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold">Welcome Back</h1>
           <p className="mt-2 text-sm text-slate-300">
-            Use your Supabase Auth account.
+            Sign in to access your dashboard.
           </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            setError("Google sign-in will be enabled after Vercel deployment.")
+          }
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 font-medium text-white opacity-70 transition-colors hover:bg-white/20"
+        >
+          <Globe className="mr-2 h-5 w-5" />
+          Google sign-in pending deployment
+        </button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-white/10" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="px-2 text-slate-400">Or continue with email</span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,7 +131,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        {error ? <p className="text-center text-sm text-red-300">{error}</p> : null}
       </GlassCard>
     </main>
   );
