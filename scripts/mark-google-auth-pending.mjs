@@ -1,11 +1,53 @@
-"use client";
+import fs from "node:fs";
+import path from "node:path";
+
+function writeFile(filePath, content) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, "utf8");
+  console.log("Updated: " + filePath);
+}
+
+writeFile(
+  "docs/project-status.md",
+  `# Project Delivery Status
+
+## Completed
+
+- Next.js application scaffold
+- Tailwind glassmorphism base styling
+- Supabase SSR client setup
+- Edge middleware authentication guard
+- Role-based dashboard route structure
+- Admin, compliance, analyst, and player pages
+- Supabase database migration and RLS policies
+- GitHub repository integration
+
+## Pending
+
+- Google OAuth
+  - Status: Pending
+  - Reason: Requires stable production domain and Vercel environment configuration.
+  - Unblock condition: Application deployed to Vercel with HTTPS domain.
+  - Owner: Engineering
+
+## Next
+
+- Real-time wallet balance and wager history
+- Supabase Realtime subscriptions
+- Wallet mutation actions
+- Role-aware data fetching
+`,
+);
+
+writeFile(
+  "src/app/login/page.tsx",
+  `"use client";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Globe } from "lucide-react";
+import { Chrome } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,9 +86,13 @@ export default function LoginPage() {
 
         const role = profile?.role;
 
-        if (role === "admin") home = "/admin";
-        else if (role === "compliance") home = "/compliance";
-        else if (role === "analyst") home = "/analyst";
+        if (role === "admin") {
+          home = "/admin";
+        } else if (role === "compliance") {
+          home = "/compliance";
+        } else if (role === "analyst") {
+          home = "/analyst";
+        }
       }
 
       router.push(home);
@@ -75,7 +121,7 @@ export default function LoginPage() {
           }
           className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 font-medium text-white opacity-70 transition-colors hover:bg-white/20"
         >
-          <Globe className="mr-2 h-5 w-5" />
+          <Chrome className="h-5 w-5" />
           Google sign-in pending deployment
         </button>
 
@@ -90,7 +136,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">Email</label>
+            <label htmlFor="email" className="text-sm font-medium">
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -103,7 +151,9 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Password</label>
+            <label htmlFor="password" className="text-sm font-medium">
+              Password
+            </label>
             <input
               id="password"
               type="password"
@@ -125,19 +175,11 @@ export default function LoginPage() {
         </form>
 
         {error ? <p className="text-center text-sm text-red-300">{error}</p> : null}
-
-        <div className="mt-4 flex flex-col gap-2 text-center text-sm">
-          <Link href="/forgot-password" className="text-slate-400 hover:text-white transition-colors">
-            Forgot your password?
-          </Link>
-          <p className="text-slate-400">
-            Do not have an account?{" "}
-            <Link href="/signup" className="font-medium text-blue-400 hover:text-blue-300 transition-colors">
-              Sign up
-            </Link>
-          </p>
-        </div>
       </GlassCard>
     </main>
   );
 }
+`,
+);
+
+console.log("Google Authentication marked as pending.");

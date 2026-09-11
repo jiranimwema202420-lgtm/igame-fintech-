@@ -7,7 +7,8 @@ const navItems = [
   { href: "/admin", label: "Admin" },
   { href: "/compliance", label: "Compliance" },
   { href: "/analyst", label: "Analyst" },
-  { href: "/player", label: "Player" }
+  { href: "/player", label: "Player" },
+  { href: "/settings", label: "Settings" }
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

@@ -1,38 +1,33 @@
-import { GlassCard } from "@/components/ui/GlassCard";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { PlayerDashboardClient } from "./PlayerDashboardClient";
+import type { UserProfile, Wager } from "@/types/wager";
 
-export default function PlayerPage() {
+export default async function PlayerPage() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // Fetch initial data securely via Server Component + RLS
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  const { data: wagers } = await supabase
+    .from("wagers")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (!profile) redirect("/login");
+
   return (
-    <div className="space-y-4">
-      <GlassCard>
-        <h1 className="text-2xl font-semibold">Player Dashboard</h1>
-        <p className="mt-2 text-slate-300">
-          Personal wallet, bet history, deposits, and withdrawals.
-        </p>
-      </GlassCard>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <GlassCard>
-          <h2 className="text-sm text-slate-300">Balance</h2>
-          <p className="mt-2 text-3xl font-semibold">$0.00</p>
-        </GlassCard>
-
-        <GlassCard>
-          <h2 className="text-sm text-slate-300">Open Wagers</h2>
-          <p className="mt-2 text-3xl font-semibold">--</p>
-        </GlassCard>
-
-        <GlassCard>
-          <h2 className="text-sm text-slate-300">Pending Withdrawals</h2>
-          <p className="mt-2 text-3xl font-semibold">--</p>
-        </GlassCard>
-      </div>
-
-      <GlassCard>
-        <h2 className="text-lg font-semibold">Recent Wagers</h2>
-        <p className="mt-2 text-sm text-slate-300">
-          Wager history table will be rendered here.
-        </p>
-      </GlassCard>
-    </div>
+    <PlayerDashboardClient 
+      initialProfile={profile as UserProfile} 
+      initialWagers={(wagers as Wager[]) || []} 
+    />
   );
 }
