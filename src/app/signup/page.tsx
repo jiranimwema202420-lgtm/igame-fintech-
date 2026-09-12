@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 export default function SignUpPage() {
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -14,7 +17,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    // event.preventDefault() removed
     alert("DEBUG: Form submitted! Email: " + email);
     setLoading(true);
     setError(null);
@@ -66,12 +69,15 @@ export default function SignUpPage() {
       <GlassCard className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold">Create Account</h1>
+          <p className={`mt-1 text-xs font-bold ${isHydrated ? "text-green-400" : "text-red-500"}`}>
+            React Status: {isHydrated ? "HYDRATED (Interactive)" : "SERVER ONLY (Broken)"}
+          </p>
           <p className="mt-2 text-sm text-slate-300">
             Join the iGaming FinTech platform.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">Email</label>
             <input
@@ -113,14 +119,12 @@ export default function SignUpPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
+          <button type="button" onClick={handleSubmit} disabled={loading}
             className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold hover:bg-white/30 disabled:opacity-60"
           >
             {loading ? "Creating account..." : "Sign up"}
           </button>
-        </form>
+        </div>
 
         {error ? <p className="text-center text-sm text-red-300">{error}</p> : null}
 
