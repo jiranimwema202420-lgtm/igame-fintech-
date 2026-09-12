@@ -16,8 +16,8 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    // event.preventDefault() removed
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     alert("DEBUG: Form submitted! Email: " + email);
     setLoading(true);
     setError(null);
@@ -77,7 +77,7 @@ export default function SignUpPage() {
           </p>
         </div>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">Email</label>
             <input
@@ -119,12 +119,12 @@ export default function SignUpPage() {
             />
           </div>
 
-          <button type="button" onClick={handleSubmit} disabled={loading}
+          <button type="submit" disabled={loading}
             className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold hover:bg-white/30 disabled:opacity-60"
           >
             {loading ? "Creating account..." : "Sign up"}
           </button>
-        </div>
+        </form>
 
         {error ? <p className="text-center text-sm text-red-300">{error}</p> : null}
 
