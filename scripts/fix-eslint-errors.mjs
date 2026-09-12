@@ -1,4 +1,6 @@
-import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
+import fs from "node:fs";
+
+const code = `import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -34,10 +36,14 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(\`\${origin}\${next}\`);
     }
   }
 
   // If code exchange fails, return to login with error feedback
-  return NextResponse.redirect(`${origin}/login?error=Could+not+authenticate+user`);
+  return NextResponse.redirect(\`\${origin}/login?error=Could+not+authenticate+user\`);
 }
+`;
+
+fs.writeFileSync("src/app/auth/callback/route.ts", code);
+console.log("✅ ESLint errors fixed with proper TypeScript types.");
