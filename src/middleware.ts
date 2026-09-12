@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const publicPaths = ["/login"];
+const publicPaths = ["/login", "/signup", "/forgot-password", "/update-password", "/auth/callback", "/test", "/"];
 const staffPaths = ["/admin", "/compliance", "/analyst"];
 
 const roleHome: Record<string, string> = {
