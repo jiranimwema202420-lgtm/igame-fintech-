@@ -1,9 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/update-password";
 
@@ -14,14 +14,17 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
+          getAll() {
+            return cookieStore.getAll();
           },
-          set(name: string, value: string, options: Record<string, unknown>) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string) {
-            cookieStore.delete(name);
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Safe to ignore if called from middleware or server component edge cases
+            }
           },
         },
       }
@@ -30,16 +33,15 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Redirect to the canonical production origin, not the preview origin.
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
-      return NextResponse.redirect(`${siteUrl}${next}`);
+      // FORCE CANONICAL DOMAIN: Prevents redirecting to protected Vercel Preview URLs
+      const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+      return NextResponse.redirect(`${canonicalUrl}${next}`);
     }
   }
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+  // Redirect to an error page if code exchange fails or code is missing
+  const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
   return NextResponse.redirect(
-    `${siteUrl}/login?error=Could+not+authenticate+user`
+    `${canonicalUrl}/login?error=Invalid%20or%20expired%20reset%20link`
   );
 }
