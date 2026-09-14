@@ -17,12 +17,10 @@ export async function GET(request: Request) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: Record<string, unknown>) {
             cookieStore.set({ name, value, ...options });
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          remove(name: string, options: any) {
+          remove(name: string) {
             cookieStore.delete(name);
           },
         },
@@ -32,9 +30,16 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      // Redirect to the canonical production origin, not the preview origin.
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+      return NextResponse.redirect(`${siteUrl}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=Could+not+authenticate+user`);
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+  return NextResponse.redirect(
+    `${siteUrl}/login?error=Could+not+authenticate+user`
+  );
 }

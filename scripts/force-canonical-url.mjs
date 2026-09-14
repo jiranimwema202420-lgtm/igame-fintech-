@@ -1,4 +1,34 @@
-"use client";
+import fs from "node:fs";
+
+// ============================================================
+// 1. Rewrite get-url.ts (Canonical Domain with Hardcoded Fallback)
+// ============================================================
+const utilsDir = "src/lib/utils";
+if (!fs.existsSync(utilsDir)) {
+  fs.mkdirSync(utilsDir, { recursive: true });
+}
+
+fs.writeFileSync(
+  `${utilsDir}/get-url.ts`,
+  `export const getURL = (): string => {
+  // Use the environment variable if set, otherwise fall back to production URL.
+  // This guarantees email links NEVER point to a Vercel Preview URL.
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+
+  // Ensure trailing slash
+  return siteUrl.endsWith("/") ? siteUrl : \`\${siteUrl}/\`;
+};
+`,
+);
+console.log("1. Rewrote get-url.ts with canonical domain fallback.");
+
+// ============================================================
+// 2. Rewrite forgot-password/page.tsx (Use siteUrl directly)
+// ============================================================
+const forgotPath = "src/app/forgot-password/page.tsx";
+
+const forgotCode = `"use client";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -28,7 +58,7 @@ export default function ForgotPasswordPage() {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
         {
-          redirectTo: `${siteUrl}/auth/callback?next=/update-password`,
+          redirectTo: \`\${siteUrl}/auth/callback?next=/update-password\`,
         }
       );
 
@@ -107,3 +137,64 @@ export default function ForgotPasswordPage() {
     </main>
   );
 }
+`;
+
+fs.writeFileSync(forgotPath, forgotCode);
+console.log("2. Rewrote forgot-password page with canonical siteUrl.");
+
+// ============================================================
+// 3. Rewrite auth/callback/route.ts (Compatible cookie methods)
+// ============================================================
+const callbackCode = `import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/update-password";
+
+  if (code) {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: Record<string, unknown>) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string) {
+            cookieStore.delete(name);
+          },
+        },
+      }
+    );
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      // Redirect to the canonical production origin, not the preview origin.
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+      return NextResponse.redirect(\`\${siteUrl}\${next}\`);
+    }
+  }
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+  return NextResponse.redirect(
+    \`\${siteUrl}/login?error=Could+not+authenticate+user\`
+  );
+}
+`;
+
+fs.writeFileSync("src/app/auth/callback/route.ts", callbackCode);
+console.log("3. Rewrote auth callback route with canonical redirect.");
+
+console.log(
+  "\n✅ All 3 files updated with canonical domain + hardcoded fallback.",
+);
