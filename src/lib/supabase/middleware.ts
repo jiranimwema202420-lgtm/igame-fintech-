@@ -1,4 +1,4 @@
-import { createServerClient } from "@Supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
@@ -44,6 +44,13 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  console.log("[MIDDLEWARE AUTH DIAGNOSTIC]", {
+    pathname: request.nextUrl.pathname,
+    hasUser: !!user,
+    userId: user?.id ?? null,
+    cookieNames: request.cookies.getAll().map((cookie) => cookie.name),
+  });
 
   const pathname = request.nextUrl.pathname;
 
