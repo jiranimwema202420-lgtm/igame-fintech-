@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client"; 
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const router = useRouter();
+
   const supabase = createClient();
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -19,13 +19,6 @@ export default function UpdatePasswordPage() {
     setLoading(true);
     setMessage("");
     setIsError(false);
-
-    if (password !== confirmPassword) {
-      setMessage("Passwords do not match.");
-      setIsError(true);
-      setLoading(false);
-      return;
-    }
 
     const { error } = await supabase.auth.updateUser({ password });
 
@@ -56,15 +49,6 @@ export default function UpdatePasswordPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter new password"
-            required
-            minLength={6}
-            className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 outline-none text-white placeholder-slate-400"
-          />
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm new password"
             required
             minLength={6}
             className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 outline-none text-white placeholder-slate-400"

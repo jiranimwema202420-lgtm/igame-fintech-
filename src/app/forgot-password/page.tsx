@@ -18,26 +18,18 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createClient();
+      
+      // Official logic: use env var or fallback to window.location.origin
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
-      // Canonical domain: use env var, fall back to production URL.
-      // NEVER use window.location.origin (it resolves to preview URLs).
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        "https://igame-fintrack.vercel.app";
-
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo: `${siteUrl}/auth/callback?next=/update-password`,
-        }
-      );
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/auth/callback?next=/update-password`,
+      });
 
       if (resetError) throw resetError;
       setSent(true);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to send reset link."
-      );
+      setError(err instanceof Error ? err.message : "Failed to send reset link.");
     } finally {
       setLoading(false);
     }
@@ -47,18 +39,11 @@ export default function ForgotPasswordPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-6 bg-slate-950">
         <GlassCard className="w-full max-w-md space-y-4 text-center">
-          <h1 className="text-2xl font-semibold text-green-400">
-            Check Your Email
-          </h1>
+          <h1 className="text-2xl font-semibold text-green-400">Check Your Email</h1>
           <p className="text-sm text-slate-300">
-            We sent a password reset link to{" "}
-            <span className="font-semibold text-white">{email}</span>. Click the
-            link in the email to set a new password.
+            We sent a password reset link to <span className="font-semibold text-white">{email}</span>.
           </p>
-          <a
-            href="/login"
-            className="inline-block text-sm text-blue-400 hover:underline"
-          >
+          <a href="/login" className="inline-block text-sm text-blue-400 hover:underline">
             Back to Sign In
           </a>
         </GlassCard>
@@ -71,9 +56,7 @@ export default function ForgotPasswordPage() {
       <GlassCard className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-white">Reset Password</h1>
-          <p className="text-sm text-slate-400 mt-2">
-            Enter your email and we will send you a reset link.
-          </p>
+          <p className="text-sm text-slate-400 mt-2">Enter your email and we will send you a reset link.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -99,9 +82,7 @@ export default function ForgotPasswordPage() {
 
         <p className="text-center text-sm text-slate-400">
           Remember your password?{" "}
-          <a href="/login" className="text-blue-400 hover:underline">
-            Sign in
-          </a>
+          <a href="/login" className="text-blue-400 hover:underline">Sign in</a>
         </p>
       </GlassCard>
     </main>
