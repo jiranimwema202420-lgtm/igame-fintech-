@@ -49,8 +49,7 @@ export default function LoginPage() {
         else if (role === "analyst") home = "/analyst";
       }
 
-      router.push(home);
-      router.refresh();
+      window.location.assign(home);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
