@@ -1,4 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
+import fs from "node:fs";
+
+const callbackRoute = `import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -36,14 +38,19 @@ export async function GET(request: NextRequest) {
     if (error) {
       // EXPOSE THE ERROR: Put the exact Supabase error message in the URL!
       return NextResponse.redirect(
-        `${canonicalUrl}/login?error=${encodeURIComponent(error.message)}`
+        \`\${canonicalUrl}/login?error=\${encodeURIComponent(error.message)}\`
       );
     }
 
     if (data.session) {
-      return NextResponse.redirect(`${canonicalUrl}${next}`);
+      return NextResponse.redirect(\`\${canonicalUrl}\${next}\`);
     }
   }
 
-  return NextResponse.redirect(`${canonicalUrl}/login?error=Missing_code_in_url`);
+  return NextResponse.redirect(\`\${canonicalUrl}/login?error=Missing_code_in_url\`);
 }
+`;
+
+fs.mkdirSync("src/app/auth/callback", { recursive: true });
+fs.writeFileSync("src/app/auth/callback/route.ts", callbackRoute);
+console.log("✅ Callback route updated to expose hidden errors in the URL.");
