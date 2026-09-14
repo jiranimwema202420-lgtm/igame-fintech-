@@ -6,6 +6,16 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/update-password";
+
+  const cookieNames = request.cookies.getAll().map((cookie) => cookie.name);
+  const verifierCookies = cookieNames.filter((name) =>
+    name.includes("code-verifier"),
+  );
+
+  console.log("[AUTH CALLBACK] Cookie diagnostic:", {
+    totalCookies: cookieNames.length,
+    verifierCookies,
+  });
   
   // FORCE CANONICAL URL: Prevents Vercel preview loops
   const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
