@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@Supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
@@ -18,35 +18,42 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+        setAll(cookiesToSet, headers) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
+
           supabaseResponse = NextResponse.next({
             request,
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseResponse.cookies.set(name, value, options);
+          });
+
+          Object.entries(headers).forEach(([key, value]) => {
+            supabaseResponse.headers.set(key, value);
+          });
         },
       },
     }
   );
 
-  // Revalidate the token against the Supabase Auth server.
-  // ALWAYS use getUser() instead of getSession() in server context for security.
+  // Revalidate the authenticated user against the Supabase Auth server.
+  // getUser() performs server-side verification.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Define public routes that do NOT require authentication
   const pathname = request.nextUrl.pathname;
+
+  // Routes that do not require authentication.
   const isPublicRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password") ||
-    pathname.startsWith("/update-password") || // CRITICAL: Allows user to reach the reset form
-    pathname.startsWith("/auth");               // CRITICAL: Allows /auth/callback to process
+    pathname.startsWith("/update-password") ||
+    pathname.startsWith("/auth");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
