@@ -4,6 +4,7 @@ import { PlayerDashboardClient } from "./PlayerDashboardClient";
 import type { UserProfile, Wager } from "@/types/wager";
 
 export default async function PlayerPage() {
+  console.log("[PLAYER PAGE ENTERED]");
   const supabase = await createClient();
 
   const { data: { user }, error } = await supabase.auth.getUser();
