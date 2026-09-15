@@ -7,7 +7,26 @@ export default async function PlayerPage() {
   console.log("[PLAYER PAGE ENTERED]");
   const supabase = await createClient();
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+  let user = null;
+let error = null;
+
+try {
+  const result = await supabase.auth.getUser();
+  user = result.data.user;
+  error = result.error;
+
+  console.log("[PLAYER GETUSER DIAGNOSTIC]", {
+    hasUser: !!user,
+    userId: user?.id ?? null,
+    error: error?.message ?? null,
+    errorCode: error?.code ?? null,
+  });
+} catch (err) {
+  console.error("[PLAYER GETUSER EXCEPTION]", {
+    message: err instanceof Error ? err.message : String(err),
+  });
+  throw err;
+}
   
   if (!user) {
     return (
