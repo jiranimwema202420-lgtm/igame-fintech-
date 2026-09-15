@@ -45,13 +45,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log("[MIDDLEWARE AUTH DIAGNOSTIC]", {
-    pathname: request.nextUrl.pathname,
-    hasUser: !!user,
-    userId: user?.id ?? null,
-    cookieNames: request.cookies.getAll().map((cookie) => cookie.name),
-  });
-
   const pathname = request.nextUrl.pathname;
 
   // Routes that do not require authentication.
