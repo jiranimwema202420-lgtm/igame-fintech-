@@ -21,11 +21,18 @@ export default async function PlayerPage() {
   }
 
   // Fetch initial data securely via Server Component + RLS
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("*")
+  .eq("id", user.id)
+  .single();
+
+console.log("[PLAYER PROFILE DIAGNOSTIC]", {
+  userId: user.id,
+  hasProfile: !!profile,
+  profileError: profileError?.message ?? null,
+  profileErrorCode: profileError?.code ?? null,
+});
 
   const { data: wagers } = await supabase
     .from("wagers")
