@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   });
   
   // FORCE CANONICAL URL: Prevents Vercel preview loops
-  const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+  const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintech-lovat.vercel.app";
 
   if (code) {
     const cookieStore = await cookies();

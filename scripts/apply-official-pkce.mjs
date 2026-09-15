@@ -37,13 +37,13 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       // FORCE CANONICAL DOMAIN: Prevents redirecting to protected Vercel Preview URLs
-      const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+      const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintech-lovat.vercel.app";
       return NextResponse.redirect(\`\${canonicalUrl}\${next}\`);
     }
   }
 
   // Redirect to an error page if code exchange fails or code is missing
-  const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+  const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintech-lovat.vercel.app";
   return NextResponse.redirect(
     \`\${canonicalUrl}/login?error=Invalid%20or%20expired%20reset%20link\`
   );
@@ -153,11 +153,11 @@ if (fs.existsSync(forgotPath)) {
   let content = fs.readFileSync(forgotPath, "utf8");
   if (
     content.includes("window.location.origin") &&
-    !content.includes("igame-fintrack.vercel.app")
+    !content.includes("igame-fintech-lovat.vercel.app")
   ) {
     content = content.replace(
       /window\.location\.origin/g,
-      '(process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app")',
+      '(process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintech-lovat.vercel.app")',
     );
     fs.writeFileSync(forgotPath, content, "utf8");
     console.log(

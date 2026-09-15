@@ -14,7 +14,7 @@ fs.writeFileSync(
   // Use the environment variable if set, otherwise fall back to production URL.
   // This guarantees email links NEVER point to a Vercel Preview URL.
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintech-lovat.vercel.app";
 
   // Ensure trailing slash
   return siteUrl.endsWith("/") ? siteUrl : \`\${siteUrl}/\`;
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
       // NEVER use window.location.origin (it resolves to preview URLs).
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL ||
-        "https://igame-fintrack.vercel.app";
+        "https://igame-fintech-lovat.vercel.app";
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
@@ -179,13 +179,13 @@ export async function GET(request: Request) {
     if (!error) {
       // Redirect to the canonical production origin, not the preview origin.
       const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+        process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintech-lovat.vercel.app";
       return NextResponse.redirect(\`\${siteUrl}\${next}\`);
     }
   }
 
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintrack.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://igame-fintech-lovat.vercel.app";
   return NextResponse.redirect(
     \`\${siteUrl}/login?error=Could+not+authenticate+user\`
   );
