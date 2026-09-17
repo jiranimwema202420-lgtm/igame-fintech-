@@ -1,6 +1,13 @@
 import { GlassCard } from "@/components/ui/GlassCard";
+import { requireRole } from "@/lib/rbac/role-guard";
+import { requirePermissionOrRedirect } from "@/lib/rbac/permission-guard";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
-export default function AnalystPage() {
+export default async function AnalystPage() {
+  await requireRole(["super_admin", "admin", "manager", "analyst"]);
+
+  await requirePermissionOrRedirect(PERMISSIONS.REPORTS_VIEW, "/player");
+
   return (
     <div className="space-y-4">
       <GlassCard>

@@ -2,8 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PlayerDashboardClient } from "./PlayerDashboardClient";
 import type { UserProfile, Wager } from "@/types/wager";
+import { requireRole } from "@/lib/rbac/role-guard";
 
 export default async function PlayerPage() {
+  await requireRole(["player"]);
   const supabase = await createClient();
 
   const {

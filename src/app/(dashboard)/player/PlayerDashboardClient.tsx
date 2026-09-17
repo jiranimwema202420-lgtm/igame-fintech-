@@ -13,18 +13,21 @@ interface Props {
   initialWagers: Wager[];
 }
 
-export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) {
-  const { 
-    balance, 
-    wagers, 
-    isLoading, 
+export function PlayerDashboardClient({
+  initialProfile,
+  initialWagers,
+}: Props) {
+  const {
+    balance,
+    wagers,
+    isLoading,
     isRealtimeConnected,
-    setInitialData, 
-    addWager, 
-    updateWager, 
-    deleteWager, 
+    setInitialData,
+    addWager,
+    updateWager,
+    deleteWager,
     updateBalance,
-    setRealtimeConnected 
+    setRealtimeConnected,
   } = useWalletStore();
 
   useEffect(() => {
@@ -33,32 +36,48 @@ export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) 
 
     // 2. Setup Supabase Realtime
     const supabase = createClient();
-    
+
     const wagersChannel = supabase
-      .channel('public:wagers')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wagers' }, (payload) => {
-        addWager(payload.new as Wager);
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wagers' }, (payload) => {
-        updateWager(payload.new as Wager);
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'wagers' }, (payload) => {
-        deleteWager(payload.old.id);
-      })
+      .channel("public:wagers")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "wagers" },
+        (payload) => {
+          addWager(payload.new as Wager);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "wagers" },
+        (payload) => {
+          updateWager(payload.new as Wager);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "wagers" },
+        (payload) => {
+          deleteWager(payload.old.id);
+        },
+      )
       .subscribe((status) => {
-        setRealtimeConnected(status === 'SUBSCRIBED');
+        setRealtimeConnected(status === "SUBSCRIBED");
       });
 
     const profilesChannel = supabase
-      .channel('public:profiles')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'profiles',
-        filter: `id=eq.${initialProfile.id}`
-      }, (payload) => {
-        updateBalance(payload.new.balance);
-      })
+      .channel("public:profiles")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${initialProfile.id}`,
+        },
+        (payload) => {
+          updateBalance(payload.new.balance);
+        },
+      )
       .subscribe();
 
     // Cleanup on unmount
@@ -66,18 +85,34 @@ export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) 
       supabase.removeChannel(wagersChannel);
       supabase.removeChannel(profilesChannel);
     };
-  }, [initialProfile, initialWagers, setInitialData, addWager, updateWager, deleteWager, updateBalance, setRealtimeConnected]);
+  }, [
+    initialProfile,
+    initialWagers,
+    setInitialData,
+    addWager,
+    updateWager,
+    deleteWager,
+    updateBalance,
+    setRealtimeConnected,
+  ]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'won': return 'text-green-400 bg-green-400/10';
-      case 'lost': return 'text-red-400 bg-red-400/10';
-      case 'cancelled': return 'text-slate-400 bg-slate-400/10';
-      default: return 'text-yellow-400 bg-yellow-400/10';
+      case "won":
+        return "text-green-400 bg-green-400/10";
+      case "lost":
+        return "text-red-400 bg-red-400/10";
+      case "cancelled":
+        return "text-slate-400 bg-slate-400/10";
+      default:
+        return "text-yellow-400 bg-yellow-400/10";
     }
   };
 
@@ -95,9 +130,15 @@ export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) 
       {/* Header & Connection Status */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Player Dashboard</h1>
-        <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${isRealtimeConnected ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-          {isRealtimeConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-          {isRealtimeConnected ? 'Live' : 'Reconnecting...'}
+        <div
+          className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${isRealtimeConnected ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}
+        >
+          {isRealtimeConnected ? (
+            <Wifi className="h-3 w-3" />
+          ) : (
+            <WifiOff className="h-3 w-3" />
+          )}
+          {isRealtimeConnected ? "Live" : "Reconnecting..."}
         </div>
       </div>
 
@@ -121,7 +162,7 @@ export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) 
             <h2 className="text-sm font-medium">Open Wagers</h2>
           </div>
           <p className="mt-3 text-3xl font-bold tracking-tight">
-            {wagers.filter(w => w.status === 'pending').length}
+            {wagers.filter((w) => w.status === "pending").length}
           </p>
         </GlassCard>
 
@@ -144,9 +185,11 @@ export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) 
       <GlassCard className="p-0 overflow-hidden">
         <div className="border-b border-white/10 p-6">
           <h2 className="text-lg font-semibold">Recent Wagers</h2>
-          <p className="mt-1 text-sm text-slate-400">Live feed of your betting history.</p>
+          <p className="mt-1 text-sm text-slate-400">
+            Live feed of your betting history.
+          </p>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-white/5 text-xs uppercase text-slate-400">
@@ -161,15 +204,22 @@ export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) 
             <tbody className="divide-y divide-white/5">
               {wagers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                    No wagers found. Place your first bet to see live updates here.
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-slate-400"
+                  >
+                    No wagers found. Place your first bet to see live updates
+                    here.
                   </td>
                 </tr>
               ) : (
                 wagers.map((wager) => (
-                  <tr key={wager.id} className="transition-colors hover:bg-white/5">
+                  <tr
+                    key={wager.id}
+                    className="transition-colors hover:bg-white/5"
+                  >
                     <td className="px-6 py-4 font-mono text-xs text-slate-300">
-                      {wager.id.split('-')[0]}
+                      {wager.id.split("-")[0]}
                     </td>
                     <td className="px-6 py-4 font-medium">
                       {formatCurrency(Number(wager.amount))}
@@ -178,7 +228,9 @@ export function PlayerDashboardClient({ initialProfile, initialWagers }: Props) 
                       {formatCurrency(Number(wager.payout))}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusColor(wager.status)}`}>
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusColor(wager.status)}`}
+                      >
                         {wager.status}
                       </span>
                     </td>

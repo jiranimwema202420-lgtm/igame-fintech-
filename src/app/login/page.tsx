@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Globe } from "lucide-react";
+
 import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Globe } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,23 +35,36 @@ export default function LoginPage() {
       }
 
       const userId = data.user?.id;
-      let home = "/player";
 
-      if (userId) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", userId)
-          .maybeSingle();
-
-        const role = profile?.role;
-
-        if (role === "admin") home = "/admin";
-        else if (role === "compliance") home = "/compliance";
-        else if (role === "analyst") home = "/analyst";
+      if (!userId) {
+        throw new Error("Unable to determine the signed-in user.");
       }
 
-      window.location.assign(home);
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Profile lookup error:", profileError);
+        throw new Error("Unable to determine your account role.");
+      }
+
+      const roleRoutes: Record<string, string> = {
+        super_admin: "/super-admin",
+        admin: "/admin",
+        manager: "/manager",
+        staff: "/staff",
+        compliance: "/compliance",
+        analyst: "/analyst",
+        player: "/player",
+      };
+
+      const role = profile?.role ?? "player";
+      const destination = roleRoutes[role] ?? "/player";
+
+      window.location.assign(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -105,6 +119,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-white/10" />
           </div>
+
           <div className="relative flex justify-center text-xs uppercase">
             <span className="px-2 text-slate-400">Or continue with email</span>
           </div>
@@ -115,10 +130,12 @@ export default function LoginPage() {
             <label htmlFor="email" className="text-sm font-medium">
               Email
             </label>
+
             <input
               id="email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 outline-none placeholder:text-slate-400 focus:border-white/40"
@@ -130,10 +147,12 @@ export default function LoginPage() {
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
+
             <input
               id="password"
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 outline-none placeholder:text-slate-400"
@@ -151,7 +170,9 @@ export default function LoginPage() {
         </form>
 
         {error ? (
-          <p className="text-center text-sm text-red-300">{error}</p>
+          <p role="alert" className="text-center text-sm text-red-300">
+            {error}
+          </p>
         ) : null}
 
         <div className="mt-4 flex flex-col gap-2 text-center text-sm">
@@ -166,7 +187,7 @@ export default function LoginPage() {
             Do not have an account?{" "}
             <Link
               href="/signup"
-              className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
+              className="font-medium text-blue-400 transition-colors hover:text-blue-300"
             >
               Sign up
             </Link>

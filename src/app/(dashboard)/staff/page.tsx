@@ -3,33 +3,34 @@ import { requireRole } from "@/lib/rbac/role-guard";
 import { requirePermissionOrRedirect } from "@/lib/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 
-export default async function CompliancePage() {
-  await requireRole(["super_admin", "admin", "compliance"]);
+export default async function StaffPage() {
+  await requireRole(["super_admin", "admin", "manager", "staff"]);
 
-  await requirePermissionOrRedirect(PERMISSIONS.COMPLIANCE_VIEW, "/player");
+  await requirePermissionOrRedirect(PERMISSIONS.ORDERS_VIEW, "/player");
 
   return (
     <div className="space-y-4">
       <GlassCard>
-        <h1 className="text-2xl font-semibold">Compliance Dashboard</h1>
+        <h1 className="text-2xl font-semibold">Staff Dashboard</h1>
         <p className="mt-2 text-slate-300">
-          KYC validation, fraud flags, and responsible gaming risk limits.
+          Day-to-day operations, customer activity, wagers, orders, and assigned
+          workflows.
         </p>
       </GlassCard>
 
       <div className="grid gap-4 md:grid-cols-3">
         <GlassCard>
-          <h2 className="text-sm text-slate-300">KYC Queue</h2>
+          <h2 className="text-sm text-slate-300">Active Tasks</h2>
           <p className="mt-2 text-3xl font-semibold">--</p>
         </GlassCard>
 
         <GlassCard>
-          <h2 className="text-sm text-slate-300">Fraud Flags</h2>
+          <h2 className="text-sm text-slate-300">Orders</h2>
           <p className="mt-2 text-3xl font-semibold">--</p>
         </GlassCard>
 
         <GlassCard>
-          <h2 className="text-sm text-slate-300">Risk Limits</h2>
+          <h2 className="text-sm text-slate-300">Wagers</h2>
           <p className="mt-2 text-3xl font-semibold">--</p>
         </GlassCard>
       </div>
