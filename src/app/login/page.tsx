@@ -2,24 +2,29 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Globe } from "lucide-react";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 export default function LoginPage() {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
     setError(null);
+
+    if (!captchaToken) {
+      setError("Please complete the security check.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const supabase = createClient();
@@ -28,6 +33,9 @@ export default function LoginPage() {
         await supabase.auth.signInWithPassword({
           email,
           password,
+          options: {
+            captchaToken,
+          },
         });
 
       if (signInError) {
@@ -67,6 +75,7 @@ export default function LoginPage() {
       window.location.assign(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -160,10 +169,27 @@ export default function LoginPage() {
             />
           </div>
 
+          <div className="flex justify-center py-2">
+            <Turnstile
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              onSuccess={(token) => {
+                setCaptchaToken(token);
+                setError(null);
+              }}
+              onExpire={() => {
+                setCaptchaToken(null);
+              }}
+              onError={() => {
+                setCaptchaToken(null);
+                setError("Security verification failed. Please try again.");
+              }}
+            />
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold hover:bg-white/30 disabled:opacity-60"
+            disabled={loading || !captchaToken}
+            className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
