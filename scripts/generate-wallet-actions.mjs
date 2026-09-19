@@ -16,7 +16,9 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const amountSchema = z
-  .number({ invalid_type_error: "Amount must be a number" })
+  .number({
+    message: "Amount must be a number",
+  })
   .positive("Amount must be positive")
   .max(100000, "Amount too large");
 
@@ -27,31 +29,52 @@ export type ActionResult = {
 
 export async function depositFunds(amount: number): Promise<ActionResult> {
   const parsed = amountSchema.safeParse(amount);
+
   if (!parsed.success) {
-    return { error: parsed.error.errors[0].message };
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid amount",
+    };
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   const { error } = await supabase.rpc("deposit_funds", {
     amount: parsed.data,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    return { error: error.message };
+  }
+
   return { success: true };
 }
 
 export async function withdrawFunds(amount: number): Promise<ActionResult> {
   const parsed = amountSchema.safeParse(amount);
+
   if (!parsed.success) {
-    return { error: parsed.error.errors[0].message };
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid amount",
+    };
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   const { error } = await supabase.rpc("withdraw_funds", {
     amount: parsed.data,
@@ -61,40 +84,44 @@ export async function withdrawFunds(amount: number): Promise<ActionResult> {
     if (error.message.includes("Insufficient balance")) {
       return { error: "Insufficient balance for withdrawal" };
     }
+
     return { error: error.message };
   }
+
   return { success: true };
 }
 
-export async function placeBet(
-  amount: number,
-  potentialPayout: number
-): Promise<ActionResult> {
+export async function placeBet(amount: number): Promise<ActionResult> {
   const parsed = amountSchema.safeParse(amount);
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0].message };
-  }
 
-  const payoutParsed = z.number().min(0).safeParse(potentialPayout);
-  if (!payoutParsed.success) {
-    return { error: "Invalid payout amount" };
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid amount",
+    };
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   const { error } = await supabase.rpc("place_bet", {
     bet_amount: parsed.data,
-    potential_payout: payoutParsed.data,
   });
 
   if (error) {
     if (error.message.includes("Insufficient balance")) {
       return { error: "Insufficient balance to place this bet" };
     }
+
     return { error: error.message };
   }
+
   return { success: true };
 }
 `,
@@ -107,20 +134,47 @@ writeFile(
 
 import { useState, useTransition } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { depositFunds, withdrawFunds, placeBet } from "@/lib/actions/wallet-actions";
-import { ArrowDownCircle, ArrowUpCircle, Zap, Loader2 } from "lucide-react";
+import {
+  depositFunds,
+  withdrawFunds,
+  placeBet,
+} from "@/lib/actions/wallet-actions";
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Zap,
+  Loader2,
+} from "lucide-react";
 
 export function WalletActions() {
   const [isPending, startTransition] = useTransition();
   const [customAmount, setCustomAmount] = useState("");
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
-  const handleAction = (action: "deposit" | "withdraw" | "bet", amount?: number) => {
+  const handleAction = (
+    action: "deposit" | "withdraw" | "bet",
+    amount?: number,
+  ) => {
     setMessage(null);
-    const targetAmount = amount || parseFloat(customAmount);
 
-    if (!targetAmount || isNaN(targetAmount) || targetAmount <= 0) {
-      setMessage({ type: "error", text: "Please enter a valid amount" });
+    const targetAmount =
+      amount !== undefined ? amount : parseFloat(customAmount);
+
+    if (
+      !Number.isFinite(targetAmount) ||
+      targetAmount <= 0 ||
+      targetAmount > 100000
+    ) {
+      setMessage({
+        type: "error",
+        text:
+          targetAmount > 100000
+            ? "Amount too large"
+            : "Please enter a valid amount",
+      });
       return;
     }
 
@@ -132,17 +186,27 @@ export function WalletActions() {
       } else if (action === "withdraw") {
         result = await withdrawFunds(targetAmount);
       } else {
-        // Demo bet: 2x potential payout
-        result = await placeBet(targetAmount, targetAmount * 2);
+        // Betting amount only.
+        // The server/database determines the wager payout.
+        result = await placeBet(targetAmount);
       }
 
       if (result.error) {
-        setMessage({ type: "error", text: result.error });
+        setMessage({
+          type: "error",
+          text: result.error,
+        });
       } else {
         setMessage({
           type: "success",
-          text: action === "deposit" ? "Deposit successful" : action === "withdraw" ? "Withdrawal successful" : "Bet placed successfully",
+          text:
+            action === "deposit"
+              ? "Deposit successful"
+              : action === "withdraw"
+                ? "Withdrawal successful"
+                : "Bet placed successfully",
         });
+
         setCustomAmount("");
       }
     });
@@ -152,7 +216,9 @@ export function WalletActions() {
     <GlassCard className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">Quick Actions</h2>
-        <p className="text-sm text-slate-400">Atomic transactions with RLS protection.</p>
+        <p className="text-sm text-slate-400">
+          Atomic transactions with RLS protection.
+        </p>
       </div>
 
       {/* Quick Amount Buttons */}
@@ -160,7 +226,9 @@ export function WalletActions() {
         {[10, 50, 100, 500].map((amt) => (
           <button
             key={amt}
+            type="button"
             onClick={() => setCustomAmount(String(amt))}
+            disabled={isPending}
             className={\`rounded-lg border px-3 py-2 text-sm font-medium transition-colors \${
               customAmount === String(amt)
                 ? "border-blue-400/50 bg-blue-400/20 text-blue-300"
@@ -176,39 +244,56 @@ export function WalletActions() {
       <input
         type="number"
         min="0"
+        max="100000"
         step="0.01"
         value={customAmount}
         onChange={(e) => setCustomAmount(e.target.value)}
         placeholder="Custom amount..."
-        className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-white/40"
+        disabled={isPending}
+        className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-white/40 disabled:opacity-50"
       />
 
       {/* Action Buttons */}
       <div className="grid grid-cols-3 gap-3">
         <button
+          type="button"
           onClick={() => handleAction("deposit")}
           disabled={isPending}
           className="flex flex-col items-center gap-2 rounded-xl border border-green-400/20 bg-green-400/10 px-4 py-4 text-sm font-medium text-green-300 transition-colors hover:bg-green-400/20 disabled:opacity-50"
         >
-          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowDownCircle className="h-5 w-5" />}
+          {isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <ArrowDownCircle className="h-5 w-5" />
+          )}
           Deposit
         </button>
 
         <button
+          type="button"
           onClick={() => handleAction("withdraw")}
           disabled={isPending}
           className="flex flex-col items-center gap-2 rounded-xl border border-orange-400/20 bg-orange-400/10 px-4 py-4 text-sm font-medium text-orange-300 transition-colors hover:bg-orange-400/20 disabled:opacity-50"
         >
-          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUpCircle className="h-5 w-5" />}
+          {isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <ArrowUpCircle className="h-5 w-5" />
+          )}
           Withdraw
         </button>
 
         <button
+          type="button"
           onClick={() => handleAction("bet")}
           disabled={isPending}
           className="flex flex-col items-center gap-2 rounded-xl border border-purple-400/20 bg-purple-400/10 px-4 py-4 text-sm font-medium text-purple-300 transition-colors hover:bg-purple-400/20 disabled:opacity-50"
         >
-          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
+          {isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Zap className="h-5 w-5" />
+          )}
           Place Bet
         </button>
       </div>
@@ -216,6 +301,7 @@ export function WalletActions() {
       {/* Feedback Message */}
       {message && (
         <div
+          role="status"
           className={\`rounded-lg px-4 py-3 text-sm font-medium \${
             message.type === "success"
               ? "bg-green-400/10 text-green-300"
@@ -239,24 +325,40 @@ const playerClientPath = path.join(
   "player",
   "PlayerDashboardClient.tsx",
 );
+
 let playerContent = fs.readFileSync(playerClientPath, "utf8");
 
-// Add import
-playerContent = playerContent.replace(
-  'import { Wallet, TrendingUp, Clock, Wifi, WifiOff } from "lucide-react";',
-  'import { Wallet, TrendingUp, Clock, Wifi, WifiOff } from "lucide-react";\nimport { WalletActions } from "@/components/wallet/WalletActions";',
-);
+// Add import only if it does not already exist.
+if (
+  !playerContent.includes(
+    'import { WalletActions } from "@/components/wallet/WalletActions";',
+  )
+) {
+  playerContent = playerContent.replace(
+    'import { Wallet, TrendingUp, Clock, Wifi, WifiOff } from "lucide-react";',
+    'import { Wallet, TrendingUp, Clock, Wifi, WifiOff } from "lucide-react";\nimport { WalletActions } from "@/components/wallet/WalletActions";',
+  );
+}
 
-// Add WalletActions component to the layout (after the stats grid)
-playerContent = playerContent.replace(
-  "{/* Wagers Table */}",
-  `{/* Wallet Actions */}
+// Add WalletActions only if it is not already present.
+if (!playerContent.includes("<WalletActions />")) {
+  playerContent = playerContent.replace(
+    "{/* Wagers Table */}",
+    `{/* Wallet Actions */}
       <WalletActions />
 
       {/* Wagers Table */}`,
-);
+  );
+}
 
 fs.writeFileSync(playerClientPath, playerContent, "utf8");
-console.log("Updated: src/app/(dashboard)/player/PlayerDashboardClient.tsx");
+
+console.log(
+  "Updated: src/app/(dashboard)/player/PlayerDashboardClient.tsx",
+);
 
 console.log("Wallet Actions injection complete.");
+`,
+);
+
+console.log("Wallet actions generation complete.");

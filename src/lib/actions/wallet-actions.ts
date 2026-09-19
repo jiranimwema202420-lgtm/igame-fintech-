@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const amountSchema = z
-  .number({ message: "Amount must be a number" })
+  .number({
+    message: "Amount must be a number",
+  })
   .positive("Amount must be positive")
   .max(100000, "Amount too large");
 
@@ -15,31 +17,48 @@ export type ActionResult = {
 
 export async function depositFunds(amount: number): Promise<ActionResult> {
   const parsed = amountSchema.safeParse(amount);
+
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid amount" };
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   const { error } = await supabase.rpc("deposit_funds", {
     amount: parsed.data,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    return { error: error.message };
+  }
+
   return { success: true };
 }
 
 export async function withdrawFunds(amount: number): Promise<ActionResult> {
   const parsed = amountSchema.safeParse(amount);
+
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid amount" };
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   const { error } = await supabase.rpc("withdraw_funds", {
     amount: parsed.data,
@@ -49,39 +68,41 @@ export async function withdrawFunds(amount: number): Promise<ActionResult> {
     if (error.message.includes("Insufficient balance")) {
       return { error: "Insufficient balance for withdrawal" };
     }
+
     return { error: error.message };
   }
+
   return { success: true };
 }
 
-export async function placeBet(
-  amount: number,
-  potentialPayout: number
-): Promise<ActionResult> {
+export async function placeBet(amount: number): Promise<ActionResult> {
   const parsed = amountSchema.safeParse(amount);
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
-  }
 
-  const payoutParsed = z.number().min(0).safeParse(potentialPayout);
-  if (!payoutParsed.success) {
-    return { error: "Invalid payout amount" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid amount" };
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   const { error } = await supabase.rpc("place_bet", {
     bet_amount: parsed.data,
-    potential_payout: payoutParsed.data,
   });
 
   if (error) {
     if (error.message.includes("Insufficient balance")) {
       return { error: "Insufficient balance to place this bet" };
     }
+
     return { error: error.message };
   }
+
   return { success: true };
 }

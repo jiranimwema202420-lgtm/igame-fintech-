@@ -181,6 +181,9 @@ export function PlayerDashboardClient({
       {/* Wallet Actions */}
       <WalletActions />
 
+      {/* Wallet Actions */}
+      <WalletActions />
+
       {/* Wagers Table */}
       <GlassCard className="p-0 overflow-hidden">
         <div className="border-b border-white/10 p-6">
