@@ -1,34 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import {
-  depositFunds,
-  withdrawFunds,
-  placeBet,
-} from "@/lib/actions/wallet-actions";
-
-type ActionType = "deposit" | "withdraw" | "bet";
+import { placeBet } from "@/lib/actions/wallet-actions";
 
 interface WalletActionsProps {
   balance?: number;
 }
 
 export function WalletActions({ balance }: WalletActionsProps) {
-  const [action, setAction] = useState<ActionType>("deposit");
   const [amount, setAmount] = useState("");
   const [customAmount, setCustomAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const quickAmounts = [10, 25, 50, 100];
-
   const targetAmount = Number(customAmount || amount);
 
-  async function handleAction() {
+  async function handlePlaceBet() {
     setMessage("");
 
     if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-      setMessage("Enter a valid amount.");
+      setMessage("Enter a valid bet amount.");
       return;
     }
 
@@ -37,32 +29,22 @@ export function WalletActions({ balance }: WalletActionsProps) {
       return;
     }
 
+    if (balance !== undefined && targetAmount > balance) {
+      setMessage("Insufficient balance to place this bet.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      let result;
-
-      if (action === "deposit") {
-        result = await depositFunds(targetAmount);
-      } else if (action === "withdraw") {
-        result = await withdrawFunds(targetAmount);
-      } else {
-        result = await placeBet(targetAmount);
-      }
+      const result = await placeBet(targetAmount);
 
       if (result.error) {
         setMessage(result.error);
         return;
       }
 
-      setMessage(
-        action === "deposit"
-          ? "Deposit successful."
-          : action === "withdraw"
-            ? "Withdrawal successful."
-            : "Bet placed successfully.",
-      );
-
+      setMessage("Bet placed successfully.");
       setAmount("");
       setCustomAmount("");
     } catch (error) {
@@ -75,27 +57,28 @@ export function WalletActions({ balance }: WalletActionsProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-white/5 p-1">
         <button
           type="button"
-          onClick={() => setAction("deposit")}
-          className={action === "deposit" ? "font-semibold" : ""}
+          disabled
+          className="cursor-not-allowed rounded-lg px-3 py-2 text-sm font-medium text-slate-500"
+          title="Deposit flow is not enabled yet"
         >
           Deposit
         </button>
 
         <button
           type="button"
-          onClick={() => setAction("withdraw")}
-          className={action === "withdraw" ? "font-semibold" : ""}
+          disabled
+          className="cursor-not-allowed rounded-lg px-3 py-2 text-sm font-medium text-slate-500"
+          title="Withdrawal flow is not enabled yet"
         >
           Withdraw
         </button>
 
         <button
           type="button"
-          onClick={() => setAction("bet")}
-          className={action === "bet" ? "font-semibold" : ""}
+          className="rounded-lg bg-white/15 px-3 py-2 text-sm font-medium text-white"
         >
           Place Bet
         </button>
@@ -110,6 +93,11 @@ export function WalletActions({ balance }: WalletActionsProps) {
               setAmount(String(quickAmount));
               setCustomAmount("");
             }}
+            className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+              amount === String(quickAmount)
+                ? "border-emerald-300/40 bg-emerald-300/15 text-emerald-100"
+                : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+            }`}
           >
             ${quickAmount}
           </button>
@@ -127,23 +115,39 @@ export function WalletActions({ balance }: WalletActionsProps) {
             setCustomAmount(event.target.value);
             setAmount("");
           }}
-          placeholder="Custom amount"
+          placeholder="Bet amount"
+          className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-emerald-300/50"
         />
       </div>
 
-      <button type="button" onClick={handleAction} disabled={loading}>
-        {loading
-          ? "Processing..."
-          : action === "deposit"
-            ? "Deposit"
-            : action === "withdraw"
-              ? "Withdraw"
-              : "Place Bet"}
+      <button
+        type="button"
+        onClick={handlePlaceBet}
+        disabled={loading}
+        className="w-full rounded-xl bg-emerald-300 px-4 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {loading ? "Placing Bet..." : "Place Bet"}
       </button>
 
-      {message && <p role="status">{message}</p>}
+      {message && (
+        <p
+          className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200"
+          role="status"
+        >
+          {message}
+        </p>
+      )}
 
-      {balance !== undefined && <p>Current balance: ${balance.toFixed(2)}</p>}
+      {balance !== undefined && (
+        <p className="text-sm text-slate-300">
+          Current balance: ${balance.toFixed(2)}
+        </p>
+      )}
+
+      <p className="text-xs text-slate-500">
+        Deposits and withdrawals will be available once the payment and
+        withdrawal workflows are enabled.
+      </p>
     </div>
   );
 }
